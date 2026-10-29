@@ -1,8 +1,8 @@
-import { View, Text, StyleSheet } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import TaskInput from "../components/TaskInput";
 import { useTasks } from "../hooks/useTasks";
 import { useTheme } from "../hooks/useTheme";
-import TaskInput from "../components/TaskInput";
 
 export default function EditTaskModal() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -14,27 +14,40 @@ export default function EditTaskModal() {
 
   if (!task) {
     return (
-      <View style={styles.container}>
-        <Text style={{ color: colors.text }}>Task not found.</Text>
+      <View style={styles.center}>
+        <Text style={{ color: colors.text, fontSize: 16 }}>
+          Task not found.
+        </Text>
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <ScrollView
+      contentContainerStyle={styles.container}
+      keyboardShouldPersistTaps="handled"
+      style={{ backgroundColor: colors.background }}
+    >
       <TaskInput
-        initialTitle={task.title}
-        initialCategory={task.category}
-        buttonLabel="Save Changes"
-        onSubmit={(title, category) => {
-          updateTask(task.id, title, category);
+        initial={{
+          title: task.title,
+          note: task.note,
+          category: task.category,
+          priority: task.priority,
+          dueDate: task.dueDate,
+        }}
+        buttonLabel="Save changes"
+        resetOnSubmit={false}
+        onSubmit={(draft) => {
+          updateTask(task.id, draft);
           router.back();
         }}
       />
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
+  container: { padding: 20, paddingBottom: 40 },
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
 });

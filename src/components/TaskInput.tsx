@@ -1,86 +1,228 @@
+import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { useState } from "react";
-import { View, Text, TextInput, Pressable, Alert, Keyboard, StyleSheet } from "react-native";
-import { CATEGORIES, Category } from "../constants/colors";
+import {
+  Alert,
+  Keyboard,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import {
+  CATEGORIES,
+  Category,
+  CATEGORY_COLORS,
+  CATEGORY_ICONS,
+  PRIORITIES,
+  Priority,
+  PRIORITY_COLORS,
+} from "../constants/colors";
+import { TaskDraft } from "../context/TasksContext";
 import { useTheme } from "../hooks/useTheme";
+import { formatDue, keyFromOffset, parseKey, toKey } from "../utils/date";
 import AppButton from "./AppButton";
+import Chip from "./Chip";
 
 type Props = {
-  initialTitle?: string;
-  initialCategory?: Category;
+  initial?: TaskDraft;
   buttonLabel: string;
-  onSubmit: (title: string, category: Category) => void;
+  resetOnSubmit?: boolean;
+  onSubmit: (draft: TaskDraft) => void;
 };
 
+const DUE_OPTIONS: { label: string; offset: number | null }[] = [
+  { label: "Today", offset: 0 },
+  { label: "Tomorrow", offset: 1 },
+  { label: "Next week", offset: 7 },
+  { label: "No date", offset: null },
+];
+
 export default function TaskInput({
-  initialTitle = "",
-  initialCategory = "Personal",
+  initial,
   buttonLabel,
+  resetOnSubmit = true,
   onSubmit,
 }: Props) {
   const { colors } = useTheme();
-  const [title, setTitle] = useState(initialTitle);
-  const [category, setCategory] = useState<Category>(initialCategory);
+  const [title, setTitle] = useState(initial?.title ?? "");
+  const [note, setNote] = useState(initial?.note ?? "");
+  const [category, setCategory] = useState<Category>(
+    initial?.category ?? "Personal",
+  );
+  const [priority, setPriority] = useState<Priority>(
+    initial?.priority ?? "Medium",
+  );
+  const [dueDate, setDueDate] = useState<string | null>(
+    initial ? initial.dueDate : keyFromOffset(0),
+  );
+  const [invalid, setInvalid] = useState(false);
+
+  const shiftDay = (days: number) => {
+    const base = dueDate ? parseKey(dueDate) : new Date();
+    base.setDate(base.getDate() + days);
+    setDueDate(toKey(base));
+    Haptics.selectionAsync();
+  };
 
   const handleSubmit = () => {
-    const clean = title.trim();
-    if (!clean) {
-      Alert.alert("Oops", "Task title cannot be empty.");
+    const cleanTitle = title.trim();
+    if (!cleanTitle) {
+      setInvalid(true);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert("Title required", "Please enter a title for your task.");
       return;
     }
     Keyboard.dismiss();
-    onSubmit(clean, category);
-    setTitle("");
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    onSubmit({
+      title: cleanTitle,
+      note: note.trim(),
+      category,
+      priority,
+      dueDate,
+    });
+    if (resetOnSubmit) {
+      setTitle("");
+      setNote("");
+      setPriority("Medium");
+      setDueDate(keyFromOffset(0));
+      setInvalid(false);
+    }
   };
+
+  const inputStyle = [
+    styles.input,
+    {
+      backgroundColor: colors.surface,
+      color: colors.text,
+      borderColor: colors.border,
+    },
+  ];
 
   return (
     <View>
-      <Text style={[styles.label, { color: colors.subtext }]}>Task title</Text>
+      <Text style={[styles.label, { color: colors.subtext }]}>TITLE</Text>
       <TextInput
         value={title}
-        onChangeText={setTitle}
-        placeholder="Add a new task"
+        onChangeText={(t) => {
+          setTitle(t);
+          if (invalid) setInvalid(false);
+        }}
+        placeholder="What do you need to do?"
         placeholderTextColor={colors.subtext}
-        style={[
-          styles.input,
-          { backgroundColor: colors.card, color: colors.text, borderColor: colors.border },
-        ]}
+        style={[inputStyle, invalid && { borderColor: colors.danger }]}
       />
 
-      <Text style={[styles.label, { color: colors.subtext }]}>Category</Text>
+      <Text style={[styles.label, { color: colors.subtext }]}>
+        NOTE (OPTIONAL)
+      </Text>
+      <TextInput
+        value={note}
+        onChangeText={setNote}
+        placeholder="Add a few details..."
+        placeholderTextColor={colors.subtext}
+        multiline
+        textAlignVertical="top"
+        style={[inputStyle, { height: 100 }]}
+      />
+
+      <Text style={[styles.label, { color: colors.subtext }]}>DUE DATE</Text>
       <View style={styles.row}>
-        {CATEGORIES.map((c) => (
-          <Pressable
-            key={c}
-            onPress={() => setCategory(c)}
-            style={[
-              styles.chip,
-              {
-                backgroundColor: category === c ? colors.primary : colors.card,
-                borderColor: colors.border,
-              },
-            ]}
-          >
-            <Text style={{ color: category === c ? "#fff" : colors.text, fontWeight: "600" }}>
-              {c}
-            </Text>
-          </Pressable>
+        {DUE_OPTIONS.map((o) => (
+          <Chip
+            key={o.label}
+            label={o.label}
+            selected={
+              dueDate === (o.offset === null ? null : keyFromOffset(o.offset))
+            }
+            onPress={() =>
+              setDueDate(o.offset === null ? null : keyFromOffset(o.offset))
+            }
+          />
         ))}
       </View>
 
-      <AppButton title={buttonLabel} onPress={handleSubmit} />
+      <View
+        style={[
+          styles.stepper,
+          { backgroundColor: colors.surface, borderColor: colors.border },
+        ]}
+      >
+        <Pressable onPress={() => shiftDay(-1)} hitSlop={10}>
+          <Ionicons name="chevron-back" size={22} color={colors.primary} />
+        </Pressable>
+        <View style={styles.stepperCenter}>
+          <Ionicons name="calendar-outline" size={18} color={colors.subtext} />
+          <Text style={{ color: colors.text, fontWeight: "700", fontSize: 15 }}>
+            {dueDate ? formatDue(dueDate) : "No due date"}
+          </Text>
+        </View>
+        <Pressable onPress={() => shiftDay(1)} hitSlop={10}>
+          <Ionicons name="chevron-forward" size={22} color={colors.primary} />
+        </Pressable>
+      </View>
+
+      <Text style={[styles.label, { color: colors.subtext }]}>PRIORITY</Text>
+      <View style={styles.row}>
+        {PRIORITIES.map((p) => (
+          <Chip
+            key={p}
+            label={p}
+            icon="flag-outline"
+            tint={PRIORITY_COLORS[p]}
+            selected={priority === p}
+            onPress={() => setPriority(p)}
+          />
+        ))}
+      </View>
+
+      <Text style={[styles.label, { color: colors.subtext }]}>CATEGORY</Text>
+      <View style={[styles.row, { marginBottom: 28 }]}>
+        {CATEGORIES.map((c) => (
+          <Chip
+            key={c}
+            label={c}
+            icon={CATEGORY_ICONS[c]}
+            tint={CATEGORY_COLORS[c]}
+            selected={category === c}
+            onPress={() => setCategory(c)}
+          />
+        ))}
+      </View>
+
+      <AppButton title={buttonLabel} icon="checkmark" onPress={handleSubmit} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  label: { fontSize: 14, fontWeight: "600", marginBottom: 8, marginTop: 8 },
-  input: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 16,
-    marginBottom: 12,
+  label: {
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 1.2,
+    marginBottom: 8,
+    marginTop: 6,
   },
-  row: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 20 },
-  chip: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: 20, borderWidth: 1 },
+  input: {
+    borderWidth: 1.5,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    marginBottom: 16,
+  },
+  row: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 14 },
+  stepper: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderWidth: 1.5,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 16,
+  },
+  stepperCenter: { flexDirection: "row", alignItems: "center", gap: 8 },
 });

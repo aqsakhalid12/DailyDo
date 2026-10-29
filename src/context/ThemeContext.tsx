@@ -1,11 +1,11 @@
 import React, { createContext, useEffect, useState } from "react";
 import { useColorScheme } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Colors } from "../constants/colors";
+import { Colors, ThemeColors } from "../constants/colors";
 
 type ThemeContextType = {
   isDark: boolean;
-  colors: typeof Colors.light;
+  colors: ThemeColors;
   toggleTheme: () => void;
 };
 
@@ -15,7 +15,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const system = useColorScheme();
   const [isDark, setIsDark] = useState(system === "dark");
 
-  // Start par saved theme load karo
+  // Load the saved theme on start
   useEffect(() => {
     AsyncStorage.getItem("theme").then((value) => {
       if (value) setIsDark(value === "dark");

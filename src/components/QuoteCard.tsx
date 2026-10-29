@@ -1,4 +1,5 @@
 import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
+import { SERIF } from "../constants/colors";
 import { useTheme } from "../hooks/useTheme";
 
 type Props = {
@@ -11,16 +12,17 @@ export default function QuoteCard({ quote, loading, error }: Props) {
   const { colors } = useTheme();
 
   return (
-    <View style={[styles.card, { backgroundColor: colors.primary }]}>
-      <Text style={styles.heading}>💡 Motivation</Text>
+    <View style={[styles.wrap, { borderLeftColor: colors.accent }]}>
       {loading ? (
-        <ActivityIndicator color="#fff" />
+        <ActivityIndicator color={colors.accent} style={{ alignSelf: "flex-start" }} />
       ) : error ? (
-        <Text style={styles.text}>{error}</Text>
+        <Text style={[styles.error, { color: colors.subtext }]}>{error}</Text>
       ) : (
         <>
-          <Text style={styles.text}>“{quote?.text}”</Text>
-          <Text style={styles.author}>— {quote?.author}</Text>
+          <Text style={[styles.text, { color: colors.text, fontFamily: SERIF }]}>
+            “{quote?.text}”
+          </Text>
+          <Text style={[styles.author, { color: colors.subtext }]}>{quote?.author}</Text>
         </>
       )}
     </View>
@@ -28,8 +30,8 @@ export default function QuoteCard({ quote, loading, error }: Props) {
 }
 
 const styles = StyleSheet.create({
-  card: { padding: 16, borderRadius: 16, marginBottom: 16 },
-  heading: { color: "#fff", fontWeight: "700", marginBottom: 8 },
-  text: { color: "#fff", fontSize: 15, lineHeight: 22 },
-  author: { color: "#fff", marginTop: 8, fontStyle: "italic", opacity: 0.9 },
+  wrap: { borderLeftWidth: 3, paddingLeft: 14, paddingVertical: 4, marginBottom: 22 },
+  text: { fontSize: 16, lineHeight: 24, fontStyle: "italic" },
+  author: { fontSize: 13, fontWeight: "600", marginTop: 8 },
+  error: { fontSize: 14 },
 });
