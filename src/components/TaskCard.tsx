@@ -111,11 +111,6 @@ export default function TaskCard({
     onToggle();
   };
 
-  const handleTrash = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onDelete();
-  };
-
   const bgOpacity = translateX.interpolate({
     inputRange: [-80, -10, 0],
     outputRange: [1, 0, 0],
@@ -266,10 +261,6 @@ export default function TaskCard({
               ) : null}
             </View>
           </View>
-
-          <Pressable onPress={handleTrash} hitSlop={12}>
-            <Ionicons name="trash-outline" size={20} color={colors.subtext} />
-          </Pressable>
         </Pressable>
       </Animated.View>
     </Animated.View>
@@ -291,7 +282,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 14,
-    paddingRight: 16,
+    paddingRight: 18,
     borderRadius: 18,
     borderWidth: 1,
     overflow: "hidden",

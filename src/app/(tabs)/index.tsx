@@ -148,9 +148,12 @@ export default function TasksScreen() {
       </ScrollView>
 
       {filtered.length > 0 ? (
-        <Text style={[styles.hint, { color: colors.subtext }]}>
-          Tip: swipe a task left to delete it
-        </Text>
+        <View style={styles.hintRow}>
+          <Ionicons name="arrow-back" size={13} color={colors.subtext} />
+          <Text style={[styles.hint, { color: colors.subtext }]}>
+            Swipe left on a task to delete it
+          </Text>
+        </View>
       ) : null}
     </View>
   );
@@ -262,7 +265,14 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   chips: { gap: 10, paddingBottom: 12 },
-  hint: { fontSize: 12, marginBottom: 12, marginLeft: 2 },
+  hintRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 12,
+    marginLeft: 2,
+  },
+  hint: { fontSize: 12 },
   empty: { alignItems: "center", paddingTop: 36, paddingHorizontal: 30 },
   emptyIcon: {
     width: 76,
